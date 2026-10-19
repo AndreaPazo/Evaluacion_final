@@ -19,33 +19,45 @@ from servicios.entradas import pedir_contrasena
 MODULOS_POR_ROL = {
     "MESA_PARTES": menu_mesa_partes,
     "CIUDADANO": menu_ciudadano,
+    "ADMINISTRADOR": None,  # Módulo en construcción
+    "FUNCIONARIO": None,    # Módulo en construcción
 }
 
 
 def opcion_login():
-    """Inicia sesión, entra al módulo del rol y al salir hace logout."""
+    """Inicia sesión, direcciona al módulo del rol correspondiente y gestiona el cierre"""
     print("\n--- INICIAR SESIÓN ---")
     nombre = input("Usuario: ")
     contrasena = pedir_contrasena("Contraseña")
     sesion, mensaje = login(nombre, contrasena)
     print(mensaje)
+
     if sesion is None:
         return
+    
     print(f"Bienvenido/a: {sesion['nombre_completo']} | Rol: {sesion['rol']}")
-    menu_del_rol = MODULOS_POR_ROL.get(sesion["rol"])
-    if menu_del_rol is None:
-        print(f"El módulo del rol {sesion['rol']} todavía está en construcción.")
+    
+    # Evalúa el rol asignado en la sesión
+    if sesion["rol"] in MODULOS_POR_ROL:
+        menu_del_rol = MODULOS_POR_ROL[sesion["rol"]]
+
+        if menu_del_rol is None:
+            # Las cuentas 'admin' o 'func_*' estan en construcción
+            print(f"El módulo del rol {sesion['rol']} todavía está en construcción.")
+        else:
+            # Ejecuta los módulos terminados (Mesa de Partes o Ciudadano)
+            menu_del_rol(sesion)
     else:
-        menu_del_rol(sesion)
+        print("\n[ERROR] Rol no reconocido por el sistema de seguridad.")
+
     sesion, mensaje = logout(sesion)
     print(mensaje)
 
-
 def menu_principal():
-    """Menú inicial: se repite hasta que la persona elija salir."""
+
     while True:
         print("\n" + "=" * 48)
-        print(" MESA DE PARTES FÍSICA Y VIRTUAL")
+        print(" MESA DE PARTES FÍSICA Y VIRTUAL - ENTIDAD")
         print("=" * 48)
         print("1. Iniciar sesión")
         print("2. Registrarse como ciudadano")
@@ -64,9 +76,10 @@ def menu_principal():
 
 
 def iniciar_sistema():
-    """Revisa los archivos de datos, carga los expedientes y abre el menú principal."""
-    # Leer todos los archivos al inicio: si alguno está dañado, el programa
-    # se detiene ANTES de que se guarde algo encima.
+    """Valida la persistencia de datos, monta las estructuras y despliega la UI."""
+    # Mecanismo de protección de datos: si un archivo base_*.py está corrupto,
+    # el programa se detiene en seco antes de sobrescribir el archivo .bak
+    
     listar_personas()
     listar_usuarios()
     listar_todas()
