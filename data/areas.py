@@ -1,8 +1,3 @@
-# ============================================================
-# Módulo: data/areas.py
-# Responsable: Integrante 3
-# Función: lista de áreas y a qué área va cada trámite.
-# ============================================================
 
 AREAS = [
     "RECURSOS HUMANOS",
@@ -20,7 +15,6 @@ AREAS_POR_TRAMITE = {
     "REPROGRAMACION DE VACACIONES": "RECURSOS HUMANOS",
     "SOLICITUD DE ORDEN DE SERVICIOS": "ABASTECIMIENTO",
 }
-
 
 def listar_areas():
     """Muestra las áreas numeradas en pantalla."""
@@ -45,3 +39,4 @@ def determinar_area_por_tramite(tramite):
 def listar_funcionarios_por_area(usuarios, area):
     """Filtra una lista de usuarios y devuelve los FUNCIONARIOS de un área."""
     return [u for u in usuarios if u["rol"] == "FUNCIONARIO" and u.get("area") == area]
+
