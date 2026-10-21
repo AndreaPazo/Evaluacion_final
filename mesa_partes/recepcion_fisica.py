@@ -14,6 +14,7 @@ from servicios.entradas import (
     pedir_folios,
     pedir_numero_documento,
     pedir_tipo_documento,
+    validar_entrada_instantanea, 
 )
 
 
@@ -57,6 +58,23 @@ def registrar_documento_fisico(sesion):
     folios = pedir_folios()
     datos = pedir_datos_adicionales(clave)
 
+# Se agrego
+
+    datos_validacion = {
+        "dni": num_doc if tipo_doc == "DNI" else "",
+        "ruc": num_doc if tipo_doc == "RUC" else "",
+        "tipo_persona": "juridica" if tipo_doc == "RUC" else "natural",
+        "folios": folios,
+        "archivo_pdf": "documento_fisico.pdf"  # Simulado para canal físico
+    }
+    
+    validacion = validar_entrada_instantanea(datos_validacion)
+    if validacion["estado"] == "rechazado":
+        print("\n[ERROR] Validación instantánea fallida:")
+        for err in validacion["errores"]:
+            print(f"- {err}")
+        return None
+
     exp, errores = registrar_documento(
         persona,
         "FISICO",
@@ -77,3 +95,4 @@ def registrar_documento_fisico(sesion):
     )
     generar_constancia_fisica(exp)
     return exp
+
