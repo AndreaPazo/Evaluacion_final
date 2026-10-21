@@ -2,6 +2,7 @@
 
 import os
 import sys
+import re #Importación para las expresiones regulares
 # Inserta de forma dinámica la ruta de la carpeta raíz del proyecto
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -186,3 +187,46 @@ def pedir_adjunto_pdf():
         if archivo != "" and archivo.lower().endswith(".pdf"):
             return archivo
         print("[ERROR] Formato inválido. El archivo debe terminar obligatoria y únicamente en '.pdf'")
+
+def validar_dni(dni: str) -> bool:
+    # Valida que el DNI tenga exactamente 8 dígitos numéricos.
+    return bool(re.match(r'^\d{8}$', str(dni)))
+
+def validar_ruc(ruc: str) -> bool:
+    # Valida que el RUC tenga exactamente 11 dígitos numéricos.
+    return bool(re.match(r'^\d{11}$', str(ruc)))
+
+def validar_archivo_pdf(nombre_archivo: str) -> bool:
+    # Valida que el archivo adjunto termine estrictamente en .pdf
+    if not nombre_archivo:
+        return False
+    return nombre_archivo.lower().endswith('.pdf')
+
+def validar_entrada_instantanea(datos: dict) -> dict:
+    errores = []
+    
+    dni = datos.get("dni", "")
+    if not validar_dni(dni):
+        errores.append("El DNI debe contener exactamente 8 dígitos numéricos.")
+    
+    tipo_persona = datos.get("tipo_persona", "natural")
+    if tipo_persona == "juridica":
+        ruc = datos.get("ruc", "")
+        if not validar_ruc(ruc):
+            errores.append("El RUC debe contener exactamente 11 dígitos numéricos.")
+            
+    folios = datos.get("folios", 0)
+    try:
+        if int(folios) <= 0:
+            errores.append("El número de folios debe ser mayor a 0.")
+    except (ValueError, TypeError):
+        errores.append("El número de folios debe ser un valor entero válido.")
+        
+    archivo = datos.get("archivo_pdf", "")
+    if not validar_archivo_pdf(archivo):
+        errores.append("El documento adjunto debe ser un archivo en formato .pdf válido.")
+        
+    if errores:
+        return {"estado": "rechazado", "errores": errores}
+    
+    return {"estado": "aprobado", "mensaje": "Validación algorítmica instantánea exitosa."}
