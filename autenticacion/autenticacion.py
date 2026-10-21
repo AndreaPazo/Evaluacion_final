@@ -1,4 +1,16 @@
+# ============================================================
+# Módulo: autenticacion.py
+# Responsable: Integrante 1
+# Función: iniciar sesión (login), consultar el rol y cerrar sesión (logout).
+#
+# FLUJO:  persona -> usuario -> login -> sesión (con rol) -> módulo del rol
+# La "sesión" es un diccionario. Los demás integrantes lo reciben y usan
+# sesion["rol"], sesion["id_persona"], etc.
+# ============================================================
+
+from data.personas import buscar_persona
 from data.usuarios import validar_credenciales
+
 
 def login(nombre_usuario, contrasena):
     """Valida usuario y contraseña. Devuelve (sesion, mensaje).
@@ -24,11 +36,13 @@ def login(nombre_usuario, contrasena):
     }
     return sesion, "Inicio de sesión correcto."
 
+
 def obtener_rol(sesion):
     """Devuelve el rol de la sesión, o None si no hay sesión."""
     if not sesion:
         return None
     return sesion.get("rol")
+
 
 def tiene_rol(sesion, *roles):
     """True si la sesión tiene alguno de los roles indicados.
@@ -36,6 +50,7 @@ def tiene_rol(sesion, *roles):
     Ejemplo: tiene_rol(sesion, "MESA_PARTES", "ADMINISTRADOR")
     """
     return obtener_rol(sesion) in roles
+
 
 def logout(sesion):
     """Cierra la sesión. Devuelve (None, mensaje); guarde el None en su variable de sesión."""

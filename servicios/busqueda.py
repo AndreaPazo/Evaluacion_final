@@ -1,9 +1,3 @@
-# ============================================================
-# Módulo: servicios/busqueda.py  (COMPARTIDO)
-# Función: algoritmos de búsqueda escritos paso a paso.
-# ============================================================
-
-
 def buscar_lineal(lista, campo, valor):
     """Recorre la lista de diccionarios uno por uno.
 
@@ -31,3 +25,22 @@ def buscar_binaria(arreglo_ordenado, objetivo):
         else:
             fin = medio - 1
     return -1
+
+# Se grego
+def buscar_expediente(expedientes: list, criterio: str) -> list:
+    """
+    Búsqueda avanzada de expedientes por código, DNI o nombre del ciudadano con orden lógico visible.
+    """
+    if not criterio:
+        return expedientes
+    
+    criterio = criterio.lower()
+    resultados = []
+    for exp in expedientes:
+        if (criterio in str(exp.get("codigo", "")).lower() or
+            criterio in str(exp.get("dni", "")).lower() or
+            criterio in str(exp.get("nombre", "")).lower()):
+            resultados.append(exp)
+            
+    return resultados
+
