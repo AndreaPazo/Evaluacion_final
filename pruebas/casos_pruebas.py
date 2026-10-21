@@ -131,6 +131,10 @@ class PruebasAlgoritmos(unittest.TestCase):
         self.assertEqual(buscar_binaria(arreglo_codigos, "EXP-0099"), -1)
 
     def test_ordenamiento_burbuja_matriz(self):
+        # Representación de reportes como matrices (Arreglos bidimensionales vistos en el curso)
+        matriz_reporte = [["EXP-0002", "DERIVADO"], ["EXP-0001", "RECIBIDO"]]
+        ordenar_burbuja_matriz(matriz_reporte, 0) # Ordenar por la columna de códigos (índice 0)
+        self.assertEqual(matriz_reporte[0][0], "EXP-0001")
         matriz_reporte = [["EXP-0002", "DERIVADO"], ["EXP-0001", "RECIBIDO"]]
         ordenar_burbuja_matriz(matriz_reporte, 0)
         self.assertEqual(matriz_reporte[0][0], "EXP-0001")
@@ -191,7 +195,7 @@ class PruebasMejorasZip(unittest.TestCase):
         
         self.assertEqual(claves, [10, 20, 30])
         self.assertEqual(paralelo_nombre, ["A", "B", "C"])
-
+        
 
 class PruebasEntradas(unittest.TestCase):
     """Valida los filtros aplicados a cadenas de texto y flujos por consola."""
