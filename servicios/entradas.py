@@ -206,7 +206,7 @@ def validar_entrada_instantanea(datos: dict) -> dict:
     errores = []
     
     dni = datos.get("dni", "")
-    if not validar_dni(dni):
+    if dni and not validar_dni(dni):
         errores.append("El DNI debe contener exactamente 8 dígitos numéricos.")
     
     tipo_persona = datos.get("tipo_persona", "natural")
