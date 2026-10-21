@@ -37,3 +37,17 @@ def fecha_a_clave(fecha):
     dia, mes, resto = fecha[0:2], fecha[3:5], fecha[6:]
     anio, hora = resto[0:4], resto[5:].replace(":", "")
     return anio + mes + dia + hora
+
+def ordenar_expedientes(expedientes: list, criterio_orden: str = "fecha_reciente") -> list:
+    # Ordenamiento lógico visible de expedientes:
+    # - 'fecha_reciente': Orden descendente por fecha (más reciente primero).
+    # - 'fecha_antigua': Orden ascendente por fecha.
+    # - 'codigo': Orden alfabético por código de expediente.
+    
+    if criterio_orden == "fecha_reciente":
+        return sorted(expedientes, key=lambda x: x.get("fecha", ""), reverse=True)
+    elif criterio_orden == "fecha_antigua":
+        return sorted(expedientes, key=lambda x: x.get("fecha", ""), reverse=False)
+    elif criterio_orden == "codigo":
+        return sorted(expedientes, key=lambda x: x.get("codigo", ""))
+    return expedientes
