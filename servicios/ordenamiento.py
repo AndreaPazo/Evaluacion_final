@@ -45,9 +45,9 @@ def ordenar_expedientes(expedientes: list, criterio_orden: str = "fecha_reciente
     # - 'codigo': Orden alfabético por código de expediente.
     
     if criterio_orden == "fecha_reciente":
-        return sorted(expedientes, key=lambda x: x.get("fecha", ""), reverse=True)
+        return sorted(expedientes, key=lambda x: fecha_a_clave(x.get("fecha_registro", "")), reverse=True)
     elif criterio_orden == "fecha_antigua":
-        return sorted(expedientes, key=lambda x: x.get("fecha", ""), reverse=False)
+        return sorted(expedientes, key=lambda x: fecha_a_clave(x.get("fecha_registro", "")), reverse=False)
     elif criterio_orden == "codigo":
         return sorted(expedientes, key=lambda x: x.get("codigo", ""))
     return expedientes
