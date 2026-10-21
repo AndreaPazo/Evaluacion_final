@@ -2,5 +2,3 @@ __pycache__/
 *.pyc
 *.tmp
 *.bak
-*.bak
-__pycache__/
