@@ -1,15 +1,13 @@
 # Función: pedir datos por consola de forma segura (menús, textos, números).
 
 import os
-import sys
+import sys     # Importación de librería nativa para controlar la salida directa en la consola
 import re #Importación para las expresiones regulares
 # Inserta de forma dinámica la ruta de la carpeta raíz del proyecto
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import msvcrt  # Importación de librería nativa para leer las teclas que se presiona (Windows)
-import sys     # Importación de librería nativa para controlar la salida directa en la consola
-
-from data.personas import validar_documento  # Importación de función modular de otro archivo
+from data.personas import correo_valido, solo_letras, telefono_valido, validar_documento  # Importación de función modular de otro archivo
 
 # Definición de una Tupla (Estructura de datos constante e inmutable del curso)
 TIPOS_DOCUMENTO = ("DNI", "CE", "RUC")
@@ -40,7 +38,6 @@ def leer_opcion(titulo, opciones, cancelar=True):
 def pedir_opcion(mensaje, opciones_validas, cancelar=False):
     # Alias compatible con algunas versiones del módulo de registro
     return leer_opcion(mensaje, opciones_validas, cancelar)
-
 
 def leer_texto(etiqueta, obligatorio=True):
     # Lee un texto y lo repite hasta que no esté vacío (si es obligatorio)
@@ -139,9 +136,7 @@ def pedir_solo_letras(etiqueta):
     while True:
         texto = input(f"{etiqueta}: ").strip()
         
-        # Uso de la función nativa all() junto con el método de cadena .isalpha()
-        # Verifica carácter por carácter mediante lógica booleana del curso
-        if texto and all(c.isalpha() or c in (" ", "-", "'") for c in texto):
+        if solo_letras(texto):
             return texto
         print("[ERROR] Ingrese un texto válido (solo letras y espacios).")
 
@@ -167,15 +162,14 @@ def pedir_telefono(etiqueta="Teléfono"):
     # Pide un número telefónico celular válido (9 dígitos en Perú)
     while True:
         telefono = input(f"{etiqueta}: ").strip()
-        if telefono.isdigit() and len(telefono) == 9 and telefono.startswith("9"):
+        if telefono_valido(telefono):
             return telefono
         print("[ERROR] Teléfono inválido. Debe tener 9 dígitos y empezar con 9.")
 
 def pedir_correo(etiqueta="Correo electrónico"):
-    # Pide un correo electrónico validando que contenga al menos un caracter '@' y un '.'
     while True:
         correo = input(f"{etiqueta}: ").strip()
-        if "@" in correo and "." in correo:
+        if correo_valido(correo):
             return correo
         print("[ERROR] Formato de correo inválido. Debe incluir '@' y un dominio válido (ej. .com).")
 
