@@ -4,6 +4,7 @@
 
 # ============================================================
 
+from administrador.administrador import menu_administrador
 from autenticacion.autenticacion import login, logout
 from autenticacion.registro import registro_ciudadano
 from ciudadano.ciudadano import menu_ciudadano
@@ -11,6 +12,7 @@ from data.almacen import ArchivoDanado
 from data.expedientes import cargar_expedientes
 from data.personas import listar_personas
 from data.usuarios import listar_usuarios
+from funcionario.funcionario import menu_funcionario
 from servicios.notificaciones import listar_todas
 from mesa_partes.mesa_partes import menu_mesa_partes
 from servicios.entradas import pedir_contrasena
@@ -19,8 +21,8 @@ from servicios.entradas import pedir_contrasena
 MODULOS_POR_ROL = {
     "MESA_PARTES": menu_mesa_partes,
     "CIUDADANO": menu_ciudadano,
-    "ADMINISTRADOR": None,  # Módulo en construcción
-    "FUNCIONARIO": None,    # Módulo en construcción
+    "ADMINISTRADOR": menu_administrador,
+    "FUNCIONARIO": menu_funcionario, 
 }
 
 
@@ -39,14 +41,7 @@ def opcion_login():
     
     # Evalúa el rol asignado en la sesión
     if sesion["rol"] in MODULOS_POR_ROL:
-        menu_del_rol = MODULOS_POR_ROL[sesion["rol"]]
-
-        if menu_del_rol is None:
-            # Las cuentas 'admin' o 'func_*' estan en construcción
-            print(f"El módulo del rol {sesion['rol']} todavía está en construcción.")
-        else:
-            # Ejecuta los módulos terminados (Mesa de Partes o Ciudadano)
-            menu_del_rol(sesion)
+        MODULOS_POR_ROL[sesion["rol"]](sesion)
     else:
         print("\n[ERROR] Rol no reconocido por el sistema de seguridad.")
 
