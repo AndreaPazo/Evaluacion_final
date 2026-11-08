@@ -1,8 +1,5 @@
 def buscar_lineal(lista, campo, valor):
-    """Recorre la lista de diccionarios uno por uno.
-
-    Devuelve la posición (índice) donde `lista[i][campo] == valor`, o -1.
-    """
+    """Recorre la lista de diccionarios uno por uno. Devuelve la posición (índice) donde `lista[i][campo] == valor`, o -1."""
     for i in range(len(lista)):
         if lista[i][campo] == valor:
             return i
@@ -28,9 +25,7 @@ def buscar_binaria(arreglo_ordenado, objetivo):
 
 # Se grego
 def buscar_expediente(expedientes: list, criterio: str) -> list:
-    """
-    Búsqueda avanzada de expedientes por código, DNI o nombre del ciudadano con orden lógico visible.
-    """
+    """Búsqueda avanzada de expedientes por código, DNI o nombre del ciudadano con orden lógico visible."""
     if not criterio:
         return expedientes
     
@@ -38,8 +33,8 @@ def buscar_expediente(expedientes: list, criterio: str) -> list:
     resultados = []
     for exp in expedientes:
         if (criterio in str(exp.get("codigo", "")).lower() or
-            criterio in str(exp.get("dni", "")).lower() or
-            criterio in str(exp.get("nombre", "")).lower()):
+            criterio in str(exp.get("numero_identificacion", "")).lower() or
+            criterio in str(exp.get("administrador", "")).lower()):
             resultados.append(exp)
             
     return resultados
