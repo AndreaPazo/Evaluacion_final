@@ -11,6 +11,7 @@ from data.personas import buscar_persona, formato_id
 from mesa_partes.recepcion_virtual import enviar_solicitud_virtual
 from servicios.entradas import leer_texto
 from servicios.historial import ver_historial
+from funcionario.procesamiento import registrar_subsanacion
 
 
 #define la funcion ver_perfil, tomando como parametro la sesion del ciudadano, 
@@ -77,18 +78,18 @@ def consultar_estado(sesion):
     ver_historial(exp)
 
 
-# def subsanar(sesion):
-#     """El ciudadano responde a una observación: OBSERVADO -> SUBSANADO."""
-#     exp = _expediente_propio(sesion)
-#     if exp is None:
-#         return
-#     if exp["estado"] != "OBSERVADO":
-#         print("Ese expediente no tiene observaciones pendientes.")
-#         return
-#     print("Observación del funcionario:", exp.get("observacion"))
-#     detalle = leer_texto("Detalle de su subsanación")
-#     ok, mensaje = registrar_subsanacion(exp, detalle, sesion["usuario"])
-#     print(("[OK] " if ok else "[ERROR] ") + mensaje)
+    def subsanar(sesion):
+        """El ciudadano responde a una observación: OBSERVADO -> SUBSANADO."""
+    exp = _expediente_propio(sesion)
+    if exp is None:
+      return
+    if exp["estado"] != "OBSERVADO":
+        print("Ese expediente no tiene observaciones pendientes.")
+        return
+    print("Observación del funcionario:", exp.get("observacion"))
+    detalle = leer_texto("Detalle de su subsanación")
+    ok, mensaje = registrar_subsanacion(exp, detalle, sesion["usuario"])
+    print(("[OK] " if ok else "[ERROR] ") + mensaje)
 
 #definir la funcion ver_constancias que toma como parametro la sesion del ciudadano,
 # y lista las constancias generadas en los expedientes del ciudadano, mostrando un mensaje si
