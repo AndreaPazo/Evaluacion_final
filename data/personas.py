@@ -118,7 +118,6 @@ def registrar_persona(tipo_documento, numero_documento, nombres, apellidos, corr
 
 def modificar_persona(id_persona, nombres=None, apellidos=None, correo=None, telefono=None):
     """Cambia solo los campos indicados. El documento no se modifica.
-
     Devuelve (True/False, mensaje).
     """
     personas = _cargar_personas()
@@ -130,6 +129,8 @@ def modificar_persona(id_persona, nombres=None, apellidos=None, correo=None, tel
                 "correo": _texto(correo),
                 "telefono": _texto(telefono),
             }
+            if not any(nuevos.values()):  # los 4 campos llegaron vacíos
+                return False, "No se realizaron cambios."
             for campo in ("nombres", "apellidos"):
                 if nuevos[campo] and not solo_letras(nuevos[campo]):
                     return False, f"Los {campo} solo pueden tener letras y espacios."
