@@ -1,8 +1,3 @@
-# ============================================================
-# Módulo: mesa_partes/mesa_partes.py
-# Responsable: Integrante 2
-# Función: menú de Mesa de Partes. main.py solo llama a menu_mesa_partes(sesion).
-# ============================================================
 
 from data.tramites import CANALES
 from mesa_partes.documentos import anular_documento, consultar_documento, derivar_documento
@@ -35,6 +30,13 @@ def _anular(sesion):
     codigo = leer_texto("Código de expediente")
     exp = consultar_documento(codigo)
     if exp is None:
+        return
+    #Validando el HU-12: se revisa el estado ANTES de pedir una confirmación y motivo
+    if exp.get("anulado") or exp["estado"] == "ANULADO":
+        print("[ERROR] El expediente ya se encuentra anulado.")
+        return
+    if exp["estado"] != "RECIBIDO":
+        print(f"[ERROR] Solo se anula un expediente RECIBIDO (estado actual: {exp['estado']}).")
         return
     if leer_opcion("¿Desea ANULAR el documento?", {"1": "Sí", "2": "No"}, cancelar=False) == "2":
         return

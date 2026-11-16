@@ -1,8 +1,4 @@
-# ============================================================
-# Módulo: mesa_partes/recepcion_fisica.py
-# Responsable: Integrante 2
-# Función: recibir documentos que el ciudadano entrega en papel.
-# ============================================================
+
 
 from autenticacion.registro import pedir_datos_persona
 from data.personas import buscar_persona_por_documento
@@ -38,6 +34,11 @@ def registrar_documento_fisico(sesion):
     num_doc = pedir_numero_documento(tipo_doc)
     persona = buscar_persona_por_documento(tipo_doc, num_doc)
 
+    #HU-13: si la persona estará INACTIVA se avisa de inmediato, antes de pedir el trámite
+    if persona is not None and persona["estado"] != "ACTIVO":
+        print("\n[ERROR] La persona se encuentra INACTIVA. No se puede registrar el documento.")
+        return None
+
     if persona is None:
         print("La persona no está registrada en la data maestra.")
         if (
@@ -58,7 +59,7 @@ def registrar_documento_fisico(sesion):
     folios = pedir_folios()
     datos = pedir_datos_adicionales(clave)
 
-# Se agrego
+#Se agrego de acuerdo al HU
 
     datos_validacion = {
         "dni": num_doc if tipo_doc == "DNI" else "",
