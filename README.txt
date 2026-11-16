@@ -80,3 +80,10 @@ GIT CONTROL:
   Cada integrante trabaja su carpeta en una rama (feature/...) con commits pequeños
   y mensajes bajo el estándar corporativo (feat, docs, chore).
 ========================================================================
+
+REQUISITOS E INSTALACION (SQL SERVER)
+- Instalar SQL Server Express, SSMS, ODBC Driver 17/18 for SQL Server y Python 3.
+- Instalar el controlador de Python: py -m pip install pyodbc
+- Ejecutar el script SQL/mesa_partes.sql en SSMS para crear la base de datos MesaPartes y sus tablas.
+- Configurar el nombre del servidor local en data/conexion.py (por defecto: localhost\SQLEXPRESS).
+
