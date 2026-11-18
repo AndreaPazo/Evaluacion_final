@@ -8,9 +8,10 @@ from administrador.administrador import menu_administrador
 from autenticacion.autenticacion import login, logout
 from autenticacion.registro import registro_ciudadano
 from ciudadano.ciudadano import menu_ciudadano
-from data.almacen import ArchivoDanado
+from data.conexion import ErrorConexion
 from data.expedientes import cargar_expedientes
 from data.personas import listar_personas
+from data.tramites import cargar_tramites
 from data.usuarios import listar_usuarios
 from funcionario.funcionario import menu_funcionario
 from servicios.notificaciones import listar_todas
@@ -72,9 +73,9 @@ def menu_principal():
 
 def iniciar_sistema():
     """Valida la persistencia de datos, monta las estructuras y despliega la UI."""
-    # Mecanismo de protección de datos: si un archivo base_*.py está corrupto,
-    # el programa se detiene en seco antes de sobrescribir el archivo .bak
-    
+    #Mecanismo de protección de datos: si un archivo base_*.py está corrupto,
+    #el programa se detiene en seco antes de sobrescribir el archivo .bak
+    cargar_tramites()
     listar_personas()
     listar_usuarios()
     listar_todas()
@@ -88,6 +89,6 @@ if __name__ == "__main__":
         iniciar_sistema()
     except (KeyboardInterrupt, EOFError):
         print("\nPrograma interrumpido. Los datos guardados no se pierden.")
-    except ArchivoDanado as error:
-        print("\n[ERROR GRAVE] " + str(error))
-        print("El programa se detuvo para no borrar sus datos.")
+    except ErrorConexion as error:
+        print("\n[ERROR] " + str(error))
+        print("El programa se detuvo. Verifique que SQL Server esté iniciado.")
