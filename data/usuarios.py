@@ -103,7 +103,7 @@ def _sin_huella(usuario):
     """Copia de la cuenta SIN la contraseña (para mostrar o devolver)."""
     return {k: v for k, v in usuario.items() if k != "contrasena_hash"}
 
-def _queda_sin_administrador(usuarios, usuario):
+def _queda_sin_administrador(usuario):
     """True si este usuario es el único ADMINISTRADOR activo."""
     if usuario["rol"] != "ADMINISTRADOR" or usuario["estado"] != "ACTIVO":
         return False
@@ -207,7 +207,7 @@ def modificar_usuario(nombre_usuario, nuevo_nombre=None, nueva_contrasena=None):
         if " " in nombre_limpio:
             return False, "El nombre de usuario no puede tener espacios."
         otro = buscar_usuario(nombre_limpio)
-        if otro is not usuario and otro["id_usuario"] != usuario["id_usuario"]:
+        if otro is not None and otro["id_usuario"] != usuario["id_usuario"]:
             return False, "El nuevo nombre de usuario ya está registrado."
     if clave and len(clave) < LARGO_MINIMO_CONTRASENA:
         return False, f"La contraseña debe tener al menos {LARGO_MINIMO_CONTRASENA} caracteres."
@@ -234,7 +234,7 @@ def asignar_rol(nombre_usuario, nuevo_rol, area=""):
     nuevo_rol = _texto(nuevo_rol).upper()
     if nuevo_rol not in ROLES_VALIDOS:
         return False, "Rol no válido. Roles: " + ", ".join(ROLES_VALIDOS) + "."
-    usuarios = _cargar_usuarios()
+    usuario = buscar_usuario(nombre_usuario)
     if usuario is None:
         return False, "No se encontró el usuario."
     if nuevo_rol != "ADMINISTRADOR" and _queda_sin_administrador(usuario):
