@@ -8,8 +8,14 @@ GO
 
 -- ===================== TABLAS ======================
 
--- >>> INTEGRANTE 1: tabla Area
--- <<< FIN INTEGRANTE 1 (Area)
+-- >>> INTEGRANTE 3: tabla Area
+CREATE TABLE dbo.Area (
+    IdArea  INT IDENTITY(1,1) NOT NULL,
+    Nombre  NVARCHAR(60)      NOT NULL,
+    CONSTRAINT PK_Area PRIMARY KEY (IdArea),
+    CONSTRAINT UQ_Area_Nombre UNIQUE (Nombre)
+);
+-- <<< FIN INTEGRANTE 3 (Area)
 
 -- >>> INTEGRANTE 2: tablas Tramite y SubtipoTramite
 CREATE TABLE dbo.Tramite (
@@ -66,16 +72,69 @@ CREATE TABLE dbo.Usuario (
 );
 -- <<< FIN INTEGRANTE 3
 
--- >>> INTEGRANTE 1: tabla Expediente
--- <<< FIN INTEGRANTE 1 (Expediente)
+-- >>> INTEGRANTE 3: tabla Expediente
+CREATE TABLE dbo.Expediente (
+    IdExpediente       INT IDENTITY(1,1) NOT NULL,
+    Codigo             VARCHAR(20)     NOT NULL,          -- EXP-2026-000001
+    CodigoConstancia   VARCHAR(30)     NULL,              -- CONST-2026-000001
+    IdPersona          INT             NOT NULL,          -- solicitante
+    IdTramite          INT             NOT NULL,
+    IdSubtipo          INT             NULL,              -- solo LICENCIA tiene subtipos
+    IdArea             INT             NOT NULL,          -- área donde está AHORA
+    IdUsuarioRegistro  INT             NOT NULL,          -- quién lo registró
+    Canal              VARCHAR(7)      NOT NULL,
+    Asunto             NVARCHAR(500)   NOT NULL,
+    Folios             INT             NULL,
+    Adjunto            NVARCHAR(150)   NULL,              -- nombre del PDF (virtual)
+    Estado             VARCHAR(10)     NOT NULL DEFAULT 'RECIBIDO',
+    FechaRegistro      DATETIME        NOT NULL DEFAULT GETDATE(),
+    MotivoAnulacion    NVARCHAR(500)   NULL,
+    Observacion        NVARCHAR(1000)  NULL,
+    Subsanacion        NVARCHAR(1000)  NULL,
+    Respuesta          NVARCHAR(1000)  NULL,
+    FechaCierre        DATETIME        NULL,              -- se llena al archivar
+    AreaLaboro         NVARCHAR(100)   NULL,              -- datos adicionales
+    NumeroOrden        VARCHAR(30)     NULL,
+    TipoFirma          VARCHAR(10)     NULL,
+    CONSTRAINT PK_Expediente PRIMARY KEY (IdExpediente),
+    CONSTRAINT UQ_Expediente_Codigo UNIQUE (Codigo),
+    CONSTRAINT FK_Expediente_Persona FOREIGN KEY (IdPersona) REFERENCES dbo.Persona (IdPersona),
+    CONSTRAINT FK_Expediente_Tramite FOREIGN KEY (IdTramite) REFERENCES dbo.Tramite (IdTramite),
+    CONSTRAINT FK_Expediente_Subtipo FOREIGN KEY (IdTramite, IdSubtipo)
+        REFERENCES dbo.SubtipoTramite (IdTramite, IdSubtipo),
+    CONSTRAINT FK_Expediente_Area FOREIGN KEY (IdArea) REFERENCES dbo.Area (IdArea),
+    CONSTRAINT FK_Expediente_Usuario FOREIGN KEY (IdUsuarioRegistro) REFERENCES dbo.Usuario (IdUsuario),
+    CONSTRAINT CK_Expediente_Canal CHECK (Canal IN ('FISICO', 'VIRTUAL')),
+    CONSTRAINT CK_Expediente_Estado CHECK (Estado IN ('RECIBIDO', 'DERIVADO', 'EN_PROCESO', 'OBSERVADO',
+                                                      'SUBSANADO', 'ATENDIDO', 'ARCHIVADO', 'ANULADO')),
+    CONSTRAINT CK_Expediente_Folios CHECK (Folios IS NULL OR Folios > 0),
+    CONSTRAINT CK_Expediente_Firma CHECK (TipoFirma IS NULL OR TipoFirma IN ('MANUSCRITA', 'DIGITAL')),
+    CONSTRAINT CK_Expediente_Anulacion CHECK (Estado <> 'ANULADO' OR MotivoAnulacion IS NOT NULL)
+);
+
+-- La constancia no se repite (se permiten varias vacías mientras se asigna)
+CREATE UNIQUE INDEX UX_Expediente_Constancia
+    ON dbo.Expediente (CodigoConstancia) WHERE CodigoConstancia IS NOT NULL;
+
+-- Acelera la bandeja del funcionario (busca por área y estado)
+CREATE INDEX IX_Expediente_Area_Estado ON dbo.Expediente (IdArea, Estado);
+-- <<< FIN INTEGRANTE 3 (Expediente)
 
 -- >>> INTEGRANTE 4: tablas HistorialExpediente y Notificacion
 -- <<< FIN INTEGRANTE 4
 
 -- ================= DATOS INICIALES =================
 
--- >>> INTEGRANTE 1: las 5 áreas
--- <<< FIN INTEGRANTE 1
+-- >>> INTEGRANTE 3: las 5 áreas
+SET IDENTITY_INSERT dbo.Area ON;
+INSERT INTO dbo.Area (IdArea, Nombre) VALUES
+ (1, 'RECURSOS HUMANOS'),
+ (2, 'ABASTECIMIENTO'),
+ (3, 'SERVICIOS AL USUARIO'),
+ (4, 'PRESUPUESTO PUBLICO'),
+ (5, 'FINANZAS');
+SET IDENTITY_INSERT dbo.Area OFF;
+-- <<< FIN INTEGRANTE 3
 
 -- >>> INTEGRANTE 2: trámites y subtipos
 INSERT INTO dbo.Tramite (Nombre, IdArea, PideDatosAdicionales) VALUES
