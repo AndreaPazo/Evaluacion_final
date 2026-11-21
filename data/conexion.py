@@ -1,6 +1,12 @@
+import os
 import pyodbc
 
-SERVIDOR = r"localhost\SQLEXPRESS"
+# Cada equipo se configura con variables de entorno (sin contraseñas en el código).
+# Docker:  MESA_PARTES_SQL=localhost,1433  MESA_PARTES_USUARIO=sa  MESA_PARTES_CLAVE=...
+# Windows: no hace falta configurar nada.
+SERVIDOR = os.environ.get("MESA_PARTES_SQL", r"localhost\SQLEXPRESS")
+USUARIO = os.environ.get("MESA_PARTES_USUARIO")
+CLAVE = os.environ.get("MESA_PARTES_CLAVE", "")
 BASE_DATOS = "MesaPartes"
 
 
@@ -23,10 +29,15 @@ def obtener_conexion(base_datos=BASE_DATOS):
         f"DRIVER={{{driver}}};"
         f"SERVER={SERVIDOR};"
         f"DATABASE={base_datos};"
-        "Trusted_Connection=yes;"
         "TrustServerCertificate=yes;"
     )
+    if USUARIO:
+        cadena += f"UID={USUARIO};PWD={CLAVE};"     # Docker: usuario de SQL Server
+    else:
+        cadena += "Trusted_Connection=yes;"          # Windows: usuario de Windows
     try:
         return pyodbc.connect(cadena, timeout=5)
     except pyodbc.Error as err:
-        raise ErrorConexion("No se pudo conectar a la base de datos") from err
+        raise ErrorConexion(
+            f"No se pudo conectar a la base de datos en {SERVIDOR}: {err}"
+        ) from err
