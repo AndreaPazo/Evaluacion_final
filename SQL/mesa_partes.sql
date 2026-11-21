@@ -123,6 +123,50 @@ CREATE INDEX IX_Expediente_Area_Estado ON dbo.Expediente (IdArea, Estado);
 -- >>> INTEGRANTE 4: tablas HistorialExpediente y Notificacion
 -- <<< FIN INTEGRANTE 4
 
+CREATE TABLE dbo.HistorialExpediente (
+    IdHistorial   INT IDENTITY(1,1) NOT NULL,
+    IdExpediente  INT               NOT NULL,
+    Fecha         DATETIME          NOT NULL DEFAULT GETDATE(),
+    Accion        NVARCHAR(30)      NOT NULL,
+    Detalle       NVARCHAR(500)     NULL,
+    IdUsuario     INT               NULL,
+    CONSTRAINT PK_HistorialExpediente PRIMARY KEY (IdHistorial),
+    CONSTRAINT FK_HistorialExpediente_Expediente FOREIGN KEY (IdExpediente)
+        REFERENCES dbo.Expediente (IdExpediente),
+    CONSTRAINT FK_HistorialExpediente_Usuario FOREIGN KEY (IdUsuario)
+        REFERENCES dbo.Usuario (IdUsuario),
+    CONSTRAINT CK_HistorialExpediente_Accion CHECK (Accion IN (
+        'REGISTRADO', 'DERIVADO', 'EN_PROCESO', 'OBSERVADO',
+        'SUBSANADO', 'ATENDIDO', 'ARCHIVADO', 'ANULADO'
+    ))
+);
+
+CREATE INDEX IX_HistorialExpediente_Expediente_Fecha
+    ON dbo.HistorialExpediente (IdExpediente, Fecha DESC);
+
+CREATE TABLE dbo.Notificacion (
+    IdNotificacion INT IDENTITY(1,1) NOT NULL,
+    IdPersona      INT               NOT NULL,
+    IdExpediente   INT               NULL,
+    Tipo           VARCHAR(20)       NOT NULL,
+    Mensaje        NVARCHAR(500)     NOT NULL,
+    Fecha          DATETIME          NOT NULL DEFAULT GETDATE(),
+    Leida          BIT               NOT NULL DEFAULT 0,
+    CONSTRAINT PK_Notificacion PRIMARY KEY (IdNotificacion),
+    CONSTRAINT FK_Notificacion_Persona FOREIGN KEY (IdPersona)
+        REFERENCES dbo.Persona (IdPersona),
+    CONSTRAINT FK_Notificacion_Expediente FOREIGN KEY (IdExpediente)
+        REFERENCES dbo.Expediente (IdExpediente),
+    CONSTRAINT CK_Notificacion_Tipo CHECK (Tipo IN (
+        'REGISTRO', 'DERIVACION', 'OBSERVACION', 'SUBSANACION', 'ATENCION', 'ARCHIVO', 'ANULACION', 'GENERAL'
+    ))
+);
+
+CREATE INDEX IX_Notificacion_Persona_Leida_Fecha
+    ON dbo.Notificacion (IdPersona, Leida, Fecha DESC);
+-- <<< FIN INTEGRANTE 4
+
+
 -- ================= DATOS INICIALES =================
 
 -- >>> INTEGRANTE 3: las 5 áreas
