@@ -23,7 +23,7 @@ CREATE TABLE dbo.Tramite (
     Nombre NVARCHAR(80) NOT NULL UNIQUE,
     IdArea INT NOT NULL,
     PideDatosAdicionales BIT NOT NULL DEFAULT 0,
-    CONSTRAINT FK_Tramite_Area FOREIGN KEY (IdArea) REFERENCES dbo.Area(IdArea)
+    CONSTRAINT FK_Tramite_Area FOREIGN KEY (IdArea) REFERENCES dbo.Area(IdArea) 
 );
 
 CREATE TABLE dbo.SubtipoTramite (
