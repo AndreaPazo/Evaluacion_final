@@ -13,7 +13,7 @@ def _consultar(sql, parametros=()):
         return cursor.fetchall()
     finally:
         con.close()
-
+        
 def cargar_areas():
     """Lee dbo.Area y llena la lista AREAS (sin cambiar el objeto lista)."""
     filas = _consultar("SELECT Nombre FROM dbo.Area ORDER BY IdArea")
