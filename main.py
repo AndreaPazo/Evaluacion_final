@@ -9,6 +9,7 @@ from autenticacion.autenticacion import login, logout
 from autenticacion.registro import registro_ciudadano
 from ciudadano.ciudadano import menu_ciudadano
 from data.conexion import ErrorConexion
+from data.areas import cargar_areas
 from data.expedientes import cargar_expedientes
 from data.personas import listar_personas
 from data.tramites import cargar_tramites
@@ -25,7 +26,6 @@ MODULOS_POR_ROL = {
     "ADMINISTRADOR": menu_administrador,
     "FUNCIONARIO": menu_funcionario, 
 }
-
 
 def opcion_login():
     """Inicia sesión, direcciona al módulo del rol correspondiente y gestiona el cierre"""
@@ -65,7 +65,7 @@ def menu_principal():
         elif opcion == "2":
             registro_ciudadano()
         elif opcion == "0":
-            print("Programa finalizado. Los datos quedan guardados en la carpeta data.")
+            print("Programa finalizado. Los datos quedan guardados en SQL Server.")
             return
         else:
             print("Opción incorrecta. Intente nuevamente.")
@@ -73,8 +73,8 @@ def menu_principal():
 
 def iniciar_sistema():
     """Valida la persistencia de datos, monta las estructuras y despliega la UI."""
-    #Mecanismo de protección de datos: si un archivo base_*.py está corrupto,
-    #el programa se detiene en seco antes de sobrescribir el archivo .bak
+    # Si SQL Server no responde, ErrorConexion detiene el programa con un mensaje simple.
+    cargar_areas()
     cargar_tramites()
     listar_personas()
     listar_usuarios()
