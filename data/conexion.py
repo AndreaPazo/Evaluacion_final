@@ -41,3 +41,18 @@ def obtener_conexion(base_datos=BASE_DATOS):
         raise ErrorConexion(
             f"No se pudo conectar a la base de datos en {SERVIDOR}: {err}"
         ) from err
+
+    @contextmanager
+    def transaccion(base_datos=None):
+    #Abre una conexión en modo transacción: hace commit al terminar o rollback si hay error."""
+     con = obtener_conexion(base_datos)
+     con.autocommit = False
+    try:
+        cursor = con.cursor()
+        yield cursor
+        con.commit()
+    except Exception:
+        con.rollback()
+        raise
+    finally:
+        con.close()

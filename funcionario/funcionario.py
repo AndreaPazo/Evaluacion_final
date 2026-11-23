@@ -16,21 +16,24 @@ from servicios.historial import ver_historial
 def ver_bandeja(area):
     """Muestra los expedientes pendientes del área.
     No muestra RECIBIDO (Mesa de Partes aún no los deriva), ARCHIVADO ni ANULADO."""
-    print("\n========== BANDEJA DE EXPEDIENTES ==========")
+    print(f"\n========== BANDEJA DE EXPEDIENTES ({area}) ==========")
     encontrados = 0
     for exp in listar_expedientes():
         if exp["area"] == area and exp["estado"] not in ("RECIBIDO", "ARCHIVADO", "ANULADO"):
             print(f"{exp['codigo']} | {exp['tramite']:<32} | {exp['estado']}")
             encontrados += 1
     if encontrados == 0:
-        print("No hay expedientes pendientes en esta área.")
+        print(f"No hay expedientes pendientes en la bandeja del área {area}.")
 
 
-def ver_expediente(codigo):
-    """Muestra el detalle y el historial. Devuelve el expediente o None."""
+def ver_expediente(codigo, area=None):
+    """Muestra el detalle y el historial. Si se indica área, rechaza expedientes de otra área."""
     exp = buscar_expediente(codigo)
     if exp is None:
         print("Expediente no encontrado.")
+        return None
+    if area is not None and exp["area"] != area:
+        print(f"[ERROR] Acceso denegado: este expediente pertenece a {exp['area']}, no a tu área ({area}).")
         return None
     print("\n========== DETALLE DEL EXPEDIENTE ==========")
     print("Código       :", exp["codigo"])
@@ -64,7 +67,8 @@ def _ejecutar(opcion, exp, sesion):
         destino = _pedir_area_destino()
         if destino is None:
             return
-        ok, msg = derivar(exp, destino, usuario)
+        motivo = input("Motivo de la derivación: ").strip()
+        ok, msg = derivar(exp, destino, usuario, motivo)
     elif opcion == "5":
         ok, msg = registrar_observacion(exp, leer_texto("Motivo de la observación"), usuario)
     elif opcion == "6":
@@ -101,7 +105,7 @@ def menu_funcionario(sesion):
         if opcion == "1":
             ver_bandeja(area)
         elif opcion == "2":
-            ver_expediente(leer_texto("Código del expediente"))
+            ver_expediente(leer_texto("Código del expediente"), area)
         elif opcion in ("3", "4", "5", "6", "7", "8"):
             exp = buscar_expediente(leer_texto("Código del expediente"))
             if exp is None:
