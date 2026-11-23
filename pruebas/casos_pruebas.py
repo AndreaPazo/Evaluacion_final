@@ -13,7 +13,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
-
+from data import conexion, expedientes as ex, personas, usuarios
 # Inserción correcta del path raíz del proyecto para evitar problemas de importación
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -39,41 +39,22 @@ from servicios.ordenamiento import (
     ordenar_expedientes,
 )
 
+from data import conexion
 
 class BasePruebas(unittest.TestCase):
-    """
-    Sustenta la viabilidad técnica y de persistencia local.
-    Crea archivos temporales de Python (base_*.py) para simular el almacenamiento 
-    en el disco duro sin alterar los archivos reales de la demostración.
-    """
+    """Usa la base MesaPartes_Pruebas en SQL Server sin tocar los datos reales."""
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.originales = (
-            personas.ARCHIVO_PERSONAS,
-            usuarios.ARCHIVO_USUARIOS,
-            ex.ARCHIVO_EXPEDIENTES,
-            notif.ARCHIVO_NOTIFICACIONES,
-        )
-        # Simulación de persistencia nativa en archivos temporales
-        personas.ARCHIVO_PERSONAS = os.path.join(self.temp.name, "base_personas.py")
-        usuarios.ARCHIVO_USUARIOS = os.path.join(self.temp.name, "base_usuarios.py")
-        ex.ARCHIVO_EXPEDIENTES = os.path.join(self.temp.name, "base_expedientes.py")
-        notif.ARCHIVO_NOTIFICACIONES = os.path.join(self.temp.name, "base_notificaciones.py")
-        
-        if hasattr(ex, 'expedientes') and isinstance(ex.expedientes, list):
-            ex.expedientes.clear()
+        self.bd_original = conexion.BASE_DATOS
+        conexion.BASE_DATOS = "MesaPartes_Pruebas"
+        with conexion.transaccion() as cur:
+            cur.execute("DELETE FROM dbo.Notificacion")
+            cur.execute("DELETE FROM dbo.HistorialExpediente")
+            cur.execute("DELETE FROM dbo.Expediente")
+            cur.execute("DELETE FROM dbo.Usuario")
+            cur.execute("DELETE FROM dbo.Persona")
 
     def tearDown(self):
-        (
-            personas.ARCHIVO_PERSONAS,
-            usuarios.ARCHIVO_USUARIOS,
-            ex.ARCHIVO_EXPEDIENTES,
-            notif.ARCHIVO_NOTIFICACIONES,
-        ) = self.originales
-        if hasattr(ex, 'expedientes') and isinstance(ex.expedientes, list):
-            ex.expedientes.clear()
-        self.temp.cleanup()
-
+        conexion.BASE_DATOS = self.bd_original
 
 class PruebasEstructuraSistema(BasePruebas):
     """
