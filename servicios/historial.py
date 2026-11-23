@@ -102,3 +102,5 @@ def ver_historial(exp):
         if mov["usuario"]:
             print(f"  Usuario: {mov['usuario']}")
     print("-" * 48)
+
+    
