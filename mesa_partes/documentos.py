@@ -1,27 +1,26 @@
-# ============================================================
-# Módulo: mesa_partes/documentos.py
-# Responsable: Integrante 2
 # Función: validar, registrar, consultar, derivar y anular documentos.
 # Es el núcleo de Mesa de Partes: lo usan la recepción física y la virtual.
-# ============================================================
+
 
 from data.areas import determinar_area_por_tramite
-from data.expedientes import crear_expediente, buscar_expediente, actualizar_expediente
+from data.expedientes import crear_expediente, buscar_expediente
 from data.personas import validar_documento
 from data.tramites import CANALES, TRAMITES
+from funcionario.procesamiento import cambiar_estado
 from servicios.historial import registrar_historial
 from servicios.notificaciones import notificar_registro, notificar_derivacion, notificar_anulacion
 
-TRAMITES_VALIDOS = [t["nombre"] for t in TRAMITES.values()]
 FIRMAS_VALIDAS = ("MANUSCRITA", "DIGITAL")
 
+def tramites_validos():
+    """Nombres de los trámites leídos de dbo.Tramite (se calcula al usarla, no al importar)."""
+    return [t["nombre"] for t in TRAMITES.values()]
 
 def validar_identificacion(tipo, numero):
     """Devuelve None si el documento es correcto, o el texto del error."""
     if not validar_documento(tipo, numero):
         return f"El número de {tipo} no tiene un formato válido."
     return None
-
 
 def validar_n_orden(n_orden):
     """Formato correcto: 0002999-2026- ENTIDAD (7 dígitos - 4 dígitos - siglas en mayúscula)."""
@@ -32,7 +31,6 @@ def validar_n_orden(n_orden):
     return (numero.isdigit() and len(numero) == 7 and anio.isdigit()
             and len(anio) == 4 and siglas.isalpha() and siglas.isupper())
 
-
 def validar_documento_tramite(persona, canal, tramite, subtipo, asunto, folios, datos, adjunto):
     """Revisa todos los datos del trámite. Devuelve la lista de errores (vacía si está bien)."""
     errores = []
@@ -42,7 +40,7 @@ def validar_documento_tramite(persona, canal, tramite, subtipo, asunto, folios, 
         errores.append("La persona se encuentra INACTIVA.")
     if canal not in CANALES.values():
         errores.append("Canal de recepción no válido.")
-    if tramite not in TRAMITES_VALIDOS:
+    if tramite not in tramites_validos():
         errores.append("Trámite no válido.")
     if tramite == "LICENCIA" and subtipo not in ("CON GOCE", "SIN GOCE"):
         errores.append("La licencia requiere subtipo CON GOCE o SIN GOCE.")
@@ -66,11 +64,9 @@ def validar_documento_tramite(persona, canal, tramite, subtipo, asunto, folios, 
             errores.append("El documento adjunto debe ser un archivo .pdf.")
     return errores
 
-
 def registrar_documento(persona, canal, tramite, subtipo, asunto, folios, datos,
                         usuario, casilla=None, adjunto=None):
     """Valida, crea el expediente, anota el historial y notifica.
-
     Devuelve (expediente, []) si todo sale bien, o (None, lista_de_errores).
     """
     errores = validar_documento_tramite(persona, canal, tramite, subtipo, asunto, folios, datos, adjunto)
@@ -93,21 +89,18 @@ def registrar_documento(persona, canal, tramite, subtipo, asunto, folios, datos,
         "adjunto": adjunto,
         "registrado_por": usuario,
     })
-    asignar_constancia(expediente)
     registrar_historial(expediente, "REGISTRO", f"Documento registrado. Canal: {canal}.", usuario)
     notificar_registro(expediente)
     return expediente, []
 
-
 def asignar_constancia(exp):
-    """Genera el código de constancia: EXP-2026-000001 -> CONST-2026-000001."""
-    actualizar_expediente(exp["codigo"], codigo_constancia="CONST-" + exp["codigo"][4:])
-
+    """La constancia (EXP-2026-000001 -> CONST-2026-000001) la genera crear_expediente()
+    junto con el código. Esta función solo la devuelve."""
+    return exp["codigo_constancia"]
 
 def obtener_documento(codigo):
     """Devuelve el expediente (sin imprimir nada) o None."""
     return buscar_expediente(codigo)
-
 
 def consultar_documento(codigo):
     """Muestra el detalle de un expediente. Devuelve el expediente o None."""
@@ -129,7 +122,6 @@ def consultar_documento(codigo):
     print("=" * 64)
     return exp
 
-
 def derivar_documento(codigo, usuario):
     """Derivación inicial: RECIBIDO -> DERIVADO al área del trámite. Devuelve (exp, error)."""
     exp = buscar_expediente(codigo)
@@ -137,11 +129,10 @@ def derivar_documento(codigo, usuario):
         return None, "Expediente no encontrado."
     if exp["estado"] != "RECIBIDO":
         return None, f"Solo se deriva un expediente RECIBIDO (estado actual: {exp['estado']})."
-    actualizar_expediente(codigo, estado="DERIVADO")
-    registrar_historial(exp, "DERIVACION", f"Derivado al área de {exp['area']}.", usuario)
+    cambiar_estado(exp, "DERIVADO", usuario,
+                   movimientos=[("DERIVACION", f"Derivado al área de {exp['area']}.")])
     notificar_derivacion(exp)
     return exp, None
-
 
 def anular_documento(codigo, motivo, usuario):
     """Anula (NO elimina) un expediente RECIBIDO. Devuelve (exp, error)."""
@@ -154,7 +145,8 @@ def anular_documento(codigo, motivo, usuario):
         return None, f"Solo se anula un expediente RECIBIDO (estado actual: {exp['estado']})."
     if not motivo.strip():
         return None, "El motivo de anulación es obligatorio."
-    actualizar_expediente(codigo, estado="ANULADO", anulado=True, motivo_anulacion=motivo.strip())
-    registrar_historial(exp, "ANULACION", f"Motivo: {motivo.strip()}", usuario)
+    cambiar_estado(exp, "ANULADO", usuario,
+                   cambios={"anulado": True, "motivo_anulacion": motivo.strip()},
+                   movimientos=[("ANULACION", f"Motivo: {motivo.strip()}")])
     notificar_anulacion(exp)
     return exp, None
