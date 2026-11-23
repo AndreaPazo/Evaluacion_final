@@ -2,13 +2,10 @@
 # Módulo: funcionario/procesamiento.py
 # Responsable: Integrante 3
 # Función: operaciones que cambian el estado de un expediente.
-#
-# Estados:  RECIBIDO -> DERIVADO -> EN_PROCESO -> OBSERVADO -> SUBSANADO
-#           -> ATENDIDO -> ARCHIVADO        (y RECIBIDO -> ANULADO)
-# Cada operación guarda el cambio, anota el historial y notifica al ciudadano.
 # ============================================================
 
-from data.expedientes import guardar_expedientes
+from data.conexion import transaccion
+from data.expedientes import guardar_expediente
 from servicios.historial import registrar_historial
 from servicios.notificaciones import (notificar_derivacion, notificar_observacion,
                                       notificar_subsanacion, notificar_atencion,
@@ -16,10 +13,22 @@ from servicios.notificaciones import (notificar_derivacion, notificar_observacio
 
 
 def cambiar_estado(expediente, nuevo_estado, usuario=""):
-    """Cambia el estado y deja el movimiento en el historial."""
+    """Cambia el estado y registra el movimiento en el historial en UNA sola transacción."""
     anterior = expediente["estado"]
     expediente["estado"] = nuevo_estado
-    registrar_historial(expediente, "CAMBIO DE ESTADO", f"{anterior} -> {nuevo_estado}", usuario)
+    try:
+        with transaccion() as cur:
+            guardar_expediente(expediente, cursor=cur)
+            registrar_historial(
+                expediente,
+                "CAMBIO DE ESTADO",
+                f"{anterior} -> {nuevo_estado}",
+                usuario,
+                cursor=cur,
+            )
+    except Exception:
+        expediente["estado"] = anterior
+        raise
 
 
 def esta_cerrado(expediente):
@@ -28,7 +37,7 @@ def esta_cerrado(expediente):
 
 
 def aceptar(expediente, usuario):
-    """RECIBIDO/DERIVADO -> EN_PROCESO. Devuelve (True/False, mensaje)."""
+    """DERIVADO -> EN_PROCESO. Devuelve (True/False, mensaje)."""
     if expediente["estado"] == "RECIBIDO":
         return False, "Mesa de Partes todavía no deriva este expediente."
     if expediente["estado"] != "DERIVADO":
@@ -37,14 +46,35 @@ def aceptar(expediente, usuario):
     return True, "Expediente aceptado. Estado: EN_PROCESO"
 
 
-def derivar(expediente, area_destino, usuario):
-    """Envía el expediente a otra área. Devuelve (True/False, mensaje)."""
+def derivar(expediente, area_destino, usuario, motivo=""):
+    """Envía el expediente a otra área exigiendo motivo y guardando origen, destino y motivo."""
     if esta_cerrado(expediente):
         return False, "El expediente está cerrado y no se puede derivar."
     if area_destino == expediente["area"]:
         return False, "El expediente ya pertenece a esa área."
+    motivo_limpio = "" if motivo is None else str(motivo).strip()
+    if not motivo_limpio:
+        return False, "Debe ingresar el motivo de la derivación."
+
+    origen = expediente["area"]
+    estado_anterior = expediente["estado"]
     expediente["area"] = area_destino
-    cambiar_estado(expediente, "DERIVADO", usuario)
+    expediente["estado"] = "DERIVADO"
+    try:
+        with transaccion() as cur:
+            guardar_expediente(expediente, cursor=cur)
+            registrar_historial(
+                expediente,
+                "DERIVACION",
+                f"Origen: {origen} -> Destino: {area_destino} | Motivo: {motivo_limpio}",
+                usuario,
+                cursor=cur,
+            )
+    except Exception:
+        expediente["area"] = origen
+        expediente["estado"] = estado_anterior
+        raise
+
     notificar_derivacion(expediente)
     return True, "Expediente derivado a: " + area_destino
 
@@ -72,7 +102,9 @@ def registrar_subsanacion(expediente, detalle, usuario):
 def registrar_respuesta(expediente, respuesta, usuario):
     """Guarda la respuesta del funcionario y la anota en el historial."""
     expediente["respuesta"] = respuesta
-    registrar_historial(expediente, "RESPUESTA", respuesta, usuario)
+    with transaccion() as cur:
+        guardar_expediente(expediente, cursor=cur)
+        registrar_historial(expediente, "RESPUESTA", respuesta, usuario, cursor=cur)
 
 
 def atender(expediente, respuesta, usuario):
@@ -95,5 +127,4 @@ def finalizar_expediente(expediente, usuario):
         return False, "Primero debes atender el expediente."
     cambiar_estado(expediente, "ARCHIVADO", usuario)
     notificar_archivo(expediente)
-    guardar_expedientes()
     return True, "Expediente archivado correctamente."
