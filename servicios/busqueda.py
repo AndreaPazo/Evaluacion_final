@@ -8,7 +8,6 @@ def buscar_lineal(lista, campo, valor):
 
 def buscar_binaria(arreglo_ordenado, objetivo):
     """Búsqueda binaria sobre un arreglo de textos YA ORDENADO de menor a mayor.
-
     Cada vuelta descarta la mitad del arreglo. Devuelve el índice o -1.
     """
     inicio = 0
@@ -23,7 +22,7 @@ def buscar_binaria(arreglo_ordenado, objetivo):
             fin = medio - 1
     return -1
 
-# Se grego
+# Búsqueda avanzada (coincidencia parcial)
 def buscar_expediente(expedientes: list, criterio: str) -> list:
     """Búsqueda avanzada de expedientes por código, DNI o nombre del ciudadano con orden lógico visible."""
     if not criterio:
@@ -34,8 +33,7 @@ def buscar_expediente(expedientes: list, criterio: str) -> list:
     for exp in expedientes:
         if (criterio in str(exp.get("codigo", "")).lower() or
             criterio in str(exp.get("numero_identificacion", "")).lower() or
-            criterio in str(exp.get("administrador", "")).lower()):
+            criterio in str(exp.get("administrado", "")).lower()):
             resultados.append(exp)
             
     return resultados
-
