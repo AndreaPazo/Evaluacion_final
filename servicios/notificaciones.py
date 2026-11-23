@@ -1,122 +1,149 @@
 # ============================================================
 # Módulo: servicios/notificaciones.py  (COMPARTIDO)
 # Responsable: Integrante 4
-# Función: crear y consultar las notificaciones de la casilla electrónica.
-# No se envía correo real: la consola simula el envío.
-# Datos en data/base_notificaciones.py
+# Función: crear y consultar las notificaciones de la casilla electrónica en SQL Server.
 # ============================================================
 
-
-#importa los modulos necesarios para manejar las notificaciones de la casilla electrónica de un ciudadano.
-import os
 from datetime import datetime
-
-from data.almacen import CARPETA_DATA, cargar_lista, guardar_lista
+from data.conexion import obtener_conexion, transaccion
+from data.expedientes import formatear_fecha
 from data.personas import codigo_casilla
 
-#archivo donde se guardan las notificaciones.
-ARCHIVO_NOTIFICACIONES = os.path.join(CARPETA_DATA, "base_notificaciones.py")
-VARIABLE = "NOTIFICACIONES"
+_SELECT_NOTIF = (
+    "SELECT n.IdNotificacion, n.IdPersona, e.Codigo, n.Tipo, n.Mensaje, n.Fecha, n.Leida "
+    "FROM dbo.Notificacion n "
+    "LEFT JOIN dbo.Expediente e ON e.IdExpediente = n.IdExpediente"
+)
 
-# Funciones privadas para cargar y guardar la lista de notificaciones
-def _cargar():
-    return cargar_lista(ARCHIVO_NOTIFICACIONES, VARIABLE)
 
-# Función privada para guardar la lista de notificaciones
-def _guardar(datos):
-    guardar_lista(ARCHIVO_NOTIFICACIONES, VARIABLE, datos)
+def _a_diccionario(fila):
+    return {
+        "id_notificacion": fila[0],
+        "id_persona": fila[1],
+        "codigo_expediente": fila[2],
+        "tipo": fila[3],
+        "mensaje": fila[4],
+        "fecha": formatear_fecha(fila[5]),
+        "leida": bool(fila[6]),
+    }
 
-# Funciones públicas para manejar las notificaciones
-def crear_notificacion(id_persona, mensaje, codigo_expediente=None, tipo="INFORMACION"):
-    """Guarda una notificación nueva (sin leer) y la devuelve."""
-    datos = _cargar()
-    siguiente = max([n["id_notificacion"] for n in datos], default=0) + 1
-    notificacion = {
-        "id_notificacion": siguiente,
+
+def crear_notificacion(id_persona, mensaje, codigo_expediente=None, tipo="GENERAL"):
+    """Guarda una notificación nueva (sin leer) en dbo.Notificacion y la devuelve."""
+    tipo_sql = "GENERAL" if not tipo or tipo.upper() == "INFORMACION" else tipo.upper()
+    ahora_dt = datetime.now()
+
+    with transaccion() as cur:
+        id_exp = None
+        if codigo_expediente:
+            cur.execute("SELECT IdExpediente FROM dbo.Expediente WHERE Codigo = ?", (codigo_expediente,))
+            fila_exp = cur.fetchone()
+            id_exp = fila_exp[0] if fila_exp else None
+
+        cur.execute(
+            "INSERT INTO dbo.Notificacion (IdPersona, IdExpediente, Tipo, Mensaje, Fecha, Leida) "
+            "OUTPUT INSERTED.IdNotificacion "
+            "VALUES (?, ?, ?, ?, ?, 0)",
+            (id_persona, id_exp, tipo_sql, mensaje, ahora_dt),
+        )
+        id_notif = cur.fetchone()[0]
+
+    return {
+        "id_notificacion": id_notif,
         "id_persona": id_persona,
         "codigo_expediente": codigo_expediente,
-        "tipo": tipo,
+        "tipo": tipo_sql,
         "mensaje": mensaje,
-        "fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "fecha": formatear_fecha(ahora_dt),
         "leida": False,
     }
-    datos.append(notificacion)
-    _guardar(datos)
-    return notificacion
 
-# Función pública para enviar una notificación a la casilla de un ciudadano
-def enviar_notificacion(id_persona, mensaje, codigo_expediente=None, tipo="INFORMACION"):
+
+def enviar_notificacion(id_persona, mensaje, codigo_expediente=None, tipo="GENERAL"):
     """Crea la notificación y simula el envío por consola."""
     n = crear_notificacion(id_persona, mensaje, codigo_expediente, tipo)
     print(f"  ✓ NOTIFICACIÓN ENVIADA a la casilla {codigo_casilla(id_persona)} "
-          f"(N.º {n['id_notificacion']}, {tipo})")
+          f"(N.º {n['id_notificacion']}, {n['tipo']})")
     return n
 
-# Función pública para listar las notificaciones de una persona
+
 def listar_notificaciones(id_persona):
     """Notificaciones de una persona."""
-    return [n for n in _cargar() if n["id_persona"] == id_persona]
+    con = obtener_conexion()
+    try:
+        cur = con.cursor()
+        cur.execute(_SELECT_NOTIF + " WHERE n.IdPersona = ? ORDER BY n.Fecha DESC, n.IdNotificacion DESC", (id_persona,))
+        return [_a_diccionario(f) for f in cur.fetchall()]
+    finally:
+        con.close()
 
-# Función pública para listar todas las notificaciones del sistema
+
 def listar_todas():
     """Todas las notificaciones del sistema."""
-    return _cargar()
+    con = obtener_conexion()
+    try:
+        cur = con.cursor()
+        cur.execute(_SELECT_NOTIF + " ORDER BY n.IdNotificacion ASC")
+        return [_a_diccionario(f) for f in cur.fetchall()]
+    finally:
+        con.close()
 
-# Función pública para contar las notificaciones no leídas de una persona
+
 def contar_no_leidas(id_persona):
     """Cantidad de notificaciones sin leer de una persona."""
-    return len([n for n in listar_notificaciones(id_persona) if not n["leida"]])
+    con = obtener_conexion()
+    try:
+        cur = con.cursor()
+        cur.execute(
+            "SELECT COUNT(*) FROM dbo.Notificacion WHERE IdPersona = ? AND Leida = 0",
+            (id_persona,),
+        )
+        return cur.fetchone()[0]
+    finally:
+        con.close()
 
-# Función pública para marcar una notificación como leída
+
 def marcar_leida(id_notificacion, id_persona):
     """Marca como leída una notificación de esa persona. True si la encontró."""
-    datos = _cargar()
-    for n in datos:
-        if n["id_notificacion"] == id_notificacion and n["id_persona"] == id_persona:
-            n["leida"] = True
-            _guardar(datos)
-            return True
-    return False
+    with transaccion() as cur:
+        cur.execute(
+            "UPDATE dbo.Notificacion SET Leida = 1 WHERE IdNotificacion = ? AND IdPersona = ?",
+            (id_notificacion, id_persona),
+        )
+        return cur.rowcount > 0
 
 
 # --- Una función por cada hito del trámite ---
 def _notificar(exp, mensaje, tipo):
     return enviar_notificacion(exp["id_persona"], mensaje, exp["codigo"], tipo)
 
-#define la funcion notificar_registro, 
-# que recibe un expediente y envia una notificacion de registro al ciudadano.
+
 def notificar_registro(exp):
     return _notificar(exp, f"Su solicitud de {exp['tramite']} fue recibida. "
                            f"Se generó el expediente {exp['codigo']}.", "REGISTRO")
 
-#define la funcion notificar_derivacion,que recibe un expediente y envia una 
-# notificacion de derivacion al ciudadano.
+
 def notificar_derivacion(exp):
     return _notificar(exp, f"Su expediente {exp['codigo']} fue derivado a {exp['area']}.", "DERIVACION")
 
-#define la funcion notificar_atencion, que recibe un expediente y envia una
-#  notificacion de atencion al ciudadano.
+
 def notificar_observacion(exp):
     return _notificar(exp, f"Su expediente {exp['codigo']} fue OBSERVADO: {exp.get('observacion', '')}. "
                            "Ingrese a su casilla para subsanar.", "OBSERVACION")
 
-#define la funcion notificar_subsanacion, que recibe un expediente y envia una
-# notificacion de subsanacion al ciudadano.
+
 def notificar_subsanacion(exp):
     return _notificar(exp, f"Se registró la subsanación del expediente {exp['codigo']}.", "SUBSANACION")
 
-#define la funcion notificar_atencion, que recibe un expediente y envia una
-# notificacion de atencion al ciudadano.
+
 def notificar_atencion(exp):
     return _notificar(exp, f"Su expediente {exp['codigo']} fue ATENDIDO.", "ATENCION")
 
-#define la funcion notificar_archivo, que recibe un expediente y envia una
-# notificacion de archivo al ciudadano.
+
 def notificar_archivo(exp):
     return _notificar(exp, f"Su expediente {exp['codigo']} fue ARCHIVADO.", "ARCHIVO")
 
-#define la funcion notificar_anulacion, que recibe un expediente y envia una
-# notificacion de anulacion al ciudadano.
+
 def notificar_anulacion(exp):
     return _notificar(exp, f"Su expediente {exp['codigo']} fue ANULADO. "
                            f"Motivo: {exp['motivo_anulacion']}.", "ANULACION")
