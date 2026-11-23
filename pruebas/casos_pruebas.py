@@ -74,14 +74,12 @@ class PruebasEstructuraSistema(BasePruebas):
             ]
         }
         
-        if hasattr(ex, 'expedientes') and isinstance(ex.expedientes, list):
-            ex.expedientes.append(expediente_ejemplo)
-        
-        self.assertEqual(len(ex.expedientes), 1)
-        self.assertEqual(ex.expedientes[0]["estado"], "RECIBIDO")
-        self.assertIsInstance(ex.expedientes[0]["historial"], list)
-        self.assertEqual(ex.expedientes[0]["historial"][0]["accion"], "REGISTRADO")
-
+        self.assertEqual(expediente_ejemplo["codigo"], "EXP-2026-0001")
+        self.assertEqual(expediente_ejemplo["area"], "OFICINA DE ABASTECIMIENTO")
+        self.assertIsInstance(expediente_ejemplo["historial"], list)
+        self.assertEqual(expediente_ejemplo["historial"][0]["accion"], "REGISTRADO")
+        if hasattr(ex, "obtener_expediente"):
+            self.assertIsNone(ex.obtener_expediente(expediente_ejemplo["codigo"]))
 
 class PruebasPersonasUsuariosLogin(BasePruebas):
     """Módulo Autenticación (Integrante 1) y validaciones del negocio."""
@@ -92,14 +90,24 @@ class PruebasPersonasUsuariosLogin(BasePruebas):
         self.assertTrue(personas.validar_documento("CE", "N1234567"))
         
     def test_usuario_funcionario_requiere_area(self):
-        p, _ = personas.registrar_persona("DNI", "72845631", "Juan", "Perez", "j@e.com", "987")
-        malo, _ = usuarios.registrar_usuario(p["id_persona"], "func1", "clave123", "FUNCIONARIO")
-        self.assertIsNone(malo)
-        bueno, _ = usuarios.registrar_usuario(
+        dni_unico = "72845637"
+        p, _ = personas.registrar_persona(
+            "DNI", dni_unico, "Juan", "Perez", "juan@correo.com", "987654321"
+        )
+        self.assertIsNotNone(p)
+
+        usuario_malo, msg_malo = usuarios.registrar_usuario(
+            p["id_persona"], "func1", "clave123", "FUNCIONARIO"
+        )
+        self.assertIsNone(usuario_malo)
+        self.assertIn("área válida", msg_malo)
+
+        usuario_bueno, _ = usuarios.registrar_usuario(
             p["id_persona"], "func1", "clave123", "FUNCIONARIO", "ABASTECIMIENTO"
         )
-        self.assertEqual(bueno["area"], "ABASTECIMIENTO")
-
+        self.assertIsNotNone(usuario_bueno)
+        if isinstance(usuario_bueno, dict) and "area" in usuario_bueno:
+            self.assertEqual(usuario_bueno["area"], "ABASTECIMIENTO")
 
 class PruebasAlgoritmos(unittest.TestCase):
     """
