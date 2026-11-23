@@ -121,14 +121,12 @@ CREATE INDEX IX_Expediente_Area_Estado ON dbo.Expediente (IdArea, Estado);
 -- <<< FIN INTEGRANTE 3 (Expediente)
 
 -- >>> INTEGRANTE 4: tablas HistorialExpediente y Notificacion
--- <<< FIN INTEGRANTE 4
-
 CREATE TABLE dbo.HistorialExpediente (
     IdHistorial   INT IDENTITY(1,1) NOT NULL,
     IdExpediente  INT               NOT NULL,
     Fecha         DATETIME          NOT NULL DEFAULT GETDATE(),
     Accion        NVARCHAR(30)      NOT NULL,
-    Detalle       NVARCHAR(500)     NULL,
+    Detalle       NVARCHAR(1000)    NULL,
     IdUsuario     INT               NULL,
     CONSTRAINT PK_HistorialExpediente PRIMARY KEY (IdHistorial),
     CONSTRAINT FK_HistorialExpediente_Expediente FOREIGN KEY (IdExpediente)
@@ -136,8 +134,7 @@ CREATE TABLE dbo.HistorialExpediente (
     CONSTRAINT FK_HistorialExpediente_Usuario FOREIGN KEY (IdUsuario)
         REFERENCES dbo.Usuario (IdUsuario),
     CONSTRAINT CK_HistorialExpediente_Accion CHECK (Accion IN (
-        'REGISTRADO', 'DERIVADO', 'EN_PROCESO', 'OBSERVADO',
-        'SUBSANADO', 'ATENDIDO', 'ARCHIVADO', 'ANULADO'
+        'REGISTRO', 'DERIVACION', 'ANULACION', 'CAMBIO DE ESTADO', 'RESPUESTA'
     ))
 );
 
@@ -158,14 +155,13 @@ CREATE TABLE dbo.Notificacion (
     CONSTRAINT FK_Notificacion_Expediente FOREIGN KEY (IdExpediente)
         REFERENCES dbo.Expediente (IdExpediente),
     CONSTRAINT CK_Notificacion_Tipo CHECK (Tipo IN (
-        'REGISTRO', 'DERIVACION', 'OBSERVACION', 'SUBSANACION', 'ATENCION', 'ARCHIVO', 'ANULACION', 'GENERAL'
+        'REGISTRO', 'DERIVACION', 'OBSERVACION', 'SUBSANACION', 'ATENCION', 'ARCHIVO', 'ANULACION', 'GENERAL', 'DOCUMENTO'
     ))
 );
 
 CREATE INDEX IX_Notificacion_Persona_Leida_Fecha
     ON dbo.Notificacion (IdPersona, Leida, Fecha DESC);
 -- <<< FIN INTEGRANTE 4
-
 
 -- ================= DATOS INICIALES =================
 
