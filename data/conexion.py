@@ -45,17 +45,17 @@ def obtener_conexion(base_datos=None):
         ) from err
 
 
-@contextmanager
-def transaccion(base_datos=None):
-    """Abre una conexión en modo transacción: hace commit al terminar o rollback si hay error."""
-    con = obtener_conexion(base_datos)
-    con.autocommit = False
+    @contextmanager
+    def transaccion():
+        """Abre una conexión y entrega un cursor. Si todo sale bien hace COMMIT;
+        si algo falla hace ROLLBACK y vuelve a lanzar el error (todo o nada)."""
+    con = obtener_conexion()
     try:
-        cursor = con.cursor()
-        yield cursor
+        yield con.cursor()
         con.commit()
     except Exception:
         con.rollback()
         raise
     finally:
         con.close()
+
