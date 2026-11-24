@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import os
 import pyodbc
 
@@ -23,12 +24,13 @@ def _obtener_driver():
     return "SQL Server"
 
 
-def obtener_conexion(base_datos=BASE_DATOS):
+def obtener_conexion(base_datos=None):
+    bd = base_datos or BASE_DATOS
     driver = _obtener_driver()
     cadena = (
         f"DRIVER={{{driver}}};"
         f"SERVER={SERVIDOR};"
-        f"DATABASE={base_datos};"
+        f"DATABASE={bd};"
         "TrustServerCertificate=yes;"
     )
     if USUARIO:
@@ -42,17 +44,18 @@ def obtener_conexion(base_datos=BASE_DATOS):
             f"No se pudo conectar a la base de datos en {SERVIDOR}: {err}"
         ) from err
 
+
     @contextmanager
-    def transaccion(base_datos=None):
-    #Abre una conexión en modo transacción: hace commit al terminar o rollback si hay error."""
-     con = obtener_conexion(base_datos)
-     con.autocommit = False
+    def transaccion():
+        """Abre una conexión y entrega un cursor. Si todo sale bien hace COMMIT;
+        si algo falla hace ROLLBACK y vuelve a lanzar el error (todo o nada)."""
+    con = obtener_conexion()
     try:
-        cursor = con.cursor()
-        yield cursor
+        yield con.cursor()
         con.commit()
     except Exception:
         con.rollback()
         raise
     finally:
         con.close()
+

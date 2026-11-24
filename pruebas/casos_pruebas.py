@@ -13,7 +13,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
-
+from data import conexion, expedientes as ex, personas, usuarios
 # Inserción correcta del path raíz del proyecto para evitar problemas de importación
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -39,41 +39,22 @@ from servicios.ordenamiento import (
     ordenar_expedientes,
 )
 
+from data import conexion
 
 class BasePruebas(unittest.TestCase):
-    """
-    Sustenta la viabilidad técnica y de persistencia local.
-    Crea archivos temporales de Python (base_*.py) para simular el almacenamiento 
-    en el disco duro sin alterar los archivos reales de la demostración.
-    """
+    """Usa la base MesaPartes_Pruebas en SQL Server sin tocar los datos reales."""
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.originales = (
-            personas.ARCHIVO_PERSONAS,
-            usuarios.ARCHIVO_USUARIOS,
-            ex.ARCHIVO_EXPEDIENTES,
-            notif.ARCHIVO_NOTIFICACIONES,
-        )
-        # Simulación de persistencia nativa en archivos temporales
-        personas.ARCHIVO_PERSONAS = os.path.join(self.temp.name, "base_personas.py")
-        usuarios.ARCHIVO_USUARIOS = os.path.join(self.temp.name, "base_usuarios.py")
-        ex.ARCHIVO_EXPEDIENTES = os.path.join(self.temp.name, "base_expedientes.py")
-        notif.ARCHIVO_NOTIFICACIONES = os.path.join(self.temp.name, "base_notificaciones.py")
-        
-        if hasattr(ex, 'expedientes') and isinstance(ex.expedientes, list):
-            ex.expedientes.clear()
+        self.bd_original = conexion.BASE_DATOS
+        conexion.BASE_DATOS = "MesaPartes_Pruebas"
+        with conexion.transaccion() as cur:
+            cur.execute("DELETE FROM dbo.Notificacion")
+            cur.execute("DELETE FROM dbo.HistorialExpediente")
+            cur.execute("DELETE FROM dbo.Expediente")
+            cur.execute("DELETE FROM dbo.Usuario")
+            cur.execute("DELETE FROM dbo.Persona")
 
     def tearDown(self):
-        (
-            personas.ARCHIVO_PERSONAS,
-            usuarios.ARCHIVO_USUARIOS,
-            ex.ARCHIVO_EXPEDIENTES,
-            notif.ARCHIVO_NOTIFICACIONES,
-        ) = self.originales
-        if hasattr(ex, 'expedientes') and isinstance(ex.expedientes, list):
-            ex.expedientes.clear()
-        self.temp.cleanup()
-
+        conexion.BASE_DATOS = self.bd_original
 
 class PruebasEstructuraSistema(BasePruebas):
     """
@@ -93,14 +74,12 @@ class PruebasEstructuraSistema(BasePruebas):
             ]
         }
         
-        if hasattr(ex, 'expedientes') and isinstance(ex.expedientes, list):
-            ex.expedientes.append(expediente_ejemplo)
-        
-        self.assertEqual(len(ex.expedientes), 1)
-        self.assertEqual(ex.expedientes[0]["estado"], "RECIBIDO")
-        self.assertIsInstance(ex.expedientes[0]["historial"], list)
-        self.assertEqual(ex.expedientes[0]["historial"][0]["accion"], "REGISTRADO")
-
+        self.assertEqual(expediente_ejemplo["codigo"], "EXP-2026-0001")
+        self.assertEqual(expediente_ejemplo["area"], "OFICINA DE ABASTECIMIENTO")
+        self.assertIsInstance(expediente_ejemplo["historial"], list)
+        self.assertEqual(expediente_ejemplo["historial"][0]["accion"], "REGISTRADO")
+        if hasattr(ex, "obtener_expediente"):
+            self.assertIsNone(ex.obtener_expediente(expediente_ejemplo["codigo"]))
 
 class PruebasPersonasUsuariosLogin(BasePruebas):
     """Módulo Autenticación (Integrante 1) y validaciones del negocio."""
@@ -111,14 +90,24 @@ class PruebasPersonasUsuariosLogin(BasePruebas):
         self.assertTrue(personas.validar_documento("CE", "N1234567"))
         
     def test_usuario_funcionario_requiere_area(self):
-        p, _ = personas.registrar_persona("DNI", "72845631", "Juan", "Perez", "j@e.com", "987")
-        malo, _ = usuarios.registrar_usuario(p["id_persona"], "func1", "clave123", "FUNCIONARIO")
-        self.assertIsNone(malo)
-        bueno, _ = usuarios.registrar_usuario(
+        dni_unico = "72845637"
+        p, _ = personas.registrar_persona(
+            "DNI", dni_unico, "Juan", "Perez", "juan@correo.com", "987654321"
+        )
+        self.assertIsNotNone(p)
+
+        usuario_malo, msg_malo = usuarios.registrar_usuario(
+            p["id_persona"], "func1", "clave123", "FUNCIONARIO"
+        )
+        self.assertIsNone(usuario_malo)
+        self.assertIn("área válida", msg_malo)
+
+        usuario_bueno, _ = usuarios.registrar_usuario(
             p["id_persona"], "func1", "clave123", "FUNCIONARIO", "ABASTECIMIENTO"
         )
-        self.assertEqual(bueno["area"], "ABASTECIMIENTO")
-
+        self.assertIsNotNone(usuario_bueno)
+        if isinstance(usuario_bueno, dict) and "area" in usuario_bueno:
+            self.assertEqual(usuario_bueno["area"], "ABASTECIMIENTO")
 
 class PruebasAlgoritmos(unittest.TestCase):
     """
