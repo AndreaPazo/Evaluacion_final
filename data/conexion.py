@@ -44,11 +44,10 @@ def obtener_conexion(base_datos=None):
             f"No se pudo conectar a la base de datos en {SERVIDOR}: {err}"
         ) from err
 
-
-    @contextmanager
-    def transaccion():
-        """Abre una conexión y entrega un cursor. Si todo sale bien hace COMMIT;
-        si algo falla hace ROLLBACK y vuelve a lanzar el error (todo o nada)."""
+@contextmanager
+def transaccion():
+        # """Abre una conexión y entrega un cursor. Si todo sale bien hace COMMIT;
+        # si algo falla hace ROLLBACK y vuelve a lanzar el error (todo o nada)."""
     con = obtener_conexion()
     try:
         yield con.cursor()
