@@ -1,10 +1,7 @@
-# ============================================================
-# Módulo: ciudadano/ciudadano.py
-# ============================================================
-
-#se importan los modulos necesarios para manejar las funciones del ciudadano, 
+# se importan los modulos necesarios para manejar las funciones del ciudadano, 
 # como ver perfil, crear solicitud, consultar expediente, consultar estado, ver constancias y
 # el menu principal del ciudadano.
+
 from ciudadano.casilla import ver_casilla, menu_mensajes
 from data.expedientes import listar_expedientes_persona, buscar_expediente
 from data.personas import buscar_persona, formato_id
@@ -12,7 +9,6 @@ from mesa_partes.recepcion_virtual import enviar_solicitud_virtual
 from servicios.entradas import leer_texto
 from servicios.historial import ver_historial
 from funcionario.procesamiento import registrar_subsanacion
-
 
 #define la funcion ver_perfil, tomando como parametro la sesion del ciudadano, 
 # y mostrando sus datos personales
@@ -77,12 +73,13 @@ def consultar_estado(sesion):
     print("Observación:", exp.get("observacion", "Sin observaciones"))
     ver_historial(exp)
 
-
-    def subsanar(sesion):
-        """El ciudadano responde a una observación: OBSERVADO -> SUBSANADO."""
+# el ciudadano responde a la observación de su expediente y el expediente 
+# pasa de OBSERVADO a SUBSANADO (vuelve a la bandeja del funcionario).
+def subsanar(sesion):
+    """El ciudadano responde a una observación: OBSERVADO -> SUBSANADO."""
     exp = _expediente_propio(sesion)
     if exp is None:
-      return
+        return
     if exp["estado"] != "OBSERVADO":
         print("Ese expediente no tiene observaciones pendientes.")
         return
@@ -117,7 +114,7 @@ def menu_ciudadano(sesion):
         print("2. Nueva solicitud")
         print("3. Mis expedientes")
         print("4. Consultar estado / seguimiento")
-        # print("5. Subsanar observación")
+        print("5. Subsanar observación")
         print("6. Notificaciones")
         print("7. Constancias")
         print("0. Cerrar sesión")
@@ -130,8 +127,8 @@ def menu_ciudadano(sesion):
             consultar_expediente(sesion)
         elif opcion == "4":
             consultar_estado(sesion)
-        # elif opcion == "5":
-        #     subsanar(sesion)
+        elif opcion == "5":
+            subsanar(sesion)
         elif opcion == "6":
             menu_mensajes(sesion["id_persona"])
         elif opcion == "7":
