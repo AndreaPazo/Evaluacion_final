@@ -21,7 +21,7 @@
 //                  3 expedientes, 4 historial, 5 notificaciones
 //   ses[1..6]      SESIÓN: 1 id_usuario, 2 usuario, 3 rol,
 //                  4 id_persona, 5 area, 6 nombre_completo
-// ============================================================
+// ===================================================================
 
 // MÓDULO: main.py  (programa principal)
 Algoritmo MesaDePartes
@@ -517,7 +517,7 @@ Funcion r <- PedirSoloLetras(etiqueta)
 		valido <- r <> "";
 		Para i <- 1 Hasta Longitud(r) Con Paso 1 Hacer
 			c <- Trozo(r, i, i);
-			Si No (EsLetra(c) O c = " " O c = "-" O c = "'") Entonces
+			Si No (EsLetra(c) O c = " " O c = "-" O c = "") Entonces
 				valido <- Falso;
 			FinSi
 		FinPara
